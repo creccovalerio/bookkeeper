@@ -55,6 +55,7 @@ public class WriteCache implements Closeable {
     /**
      * Consumer that is used to scan the entire write cache.
      */
+
     public interface EntryConsumer {
         void accept(long ledgerId, long entryId, ByteBuf entry) throws IOException;
     }
