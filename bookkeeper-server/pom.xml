@@ -368,5 +368,51 @@
         </plugins>
       </build>
     </profile>
+
+    <!-- Mutation PIT profile -->
+    <profile>
+      <id>mutation</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <withHistory>true</withHistory>
+        <pitest.version>1.8.0</pitest.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>1.14.0</version>
+            <configuration>
+              <!--              <verbose>true</verbose>-->
+              <targetClasses>
+                <!-- classes to test  -->
+                <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
+              </targetClasses>
+              <targetTests>
+                <!-- test implementations -->
+                <param>org.apache.bookkeeper.bookie.storage.ldb.writeCacheTest.WriteCacheGetTest</param>
+                <param>org.apache.bookkeeper.bookie.storage.ldb.writeCacheTest.WriteCachePutTest</param>
+              </targetTests>
+              <avoidCallsTo>
+                <avoidCallsTo>org.slf4j</avoidCallsTo>
+              </avoidCallsTo>
+            </configuration>
+            <executions>
+              <execution>
+                <id>Mutation report</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 </project>
