@@ -390,11 +390,14 @@
               <targetClasses>
                 <!-- classes to test  -->
                 <param>org.apache.bookkeeper.bookie.storage.ldb.WriteCache</param>
+                <param>org.apache.bookkeeper.bookie.BufferedChannel</param>
               </targetClasses>
               <targetTests>
                 <!-- test implementations -->
                 <param>org.apache.bookkeeper.bookie.storage.ldb.writeCacheTest.WriteCacheGetTest</param>
                 <param>org.apache.bookkeeper.bookie.storage.ldb.writeCacheTest.WriteCachePutTest</param>
+                <param>org.apache.bookkeeper.bookie.bufferedChannelTest.BufferedChannelWriteTest</param>
+                <param>org.apache.bookkeeper.bookie.bufferedChannelTest.BufferedChannelReadTest</param>
               </targetTests>
               <avoidCallsTo>
                 <avoidCallsTo>org.slf4j</avoidCallsTo>
