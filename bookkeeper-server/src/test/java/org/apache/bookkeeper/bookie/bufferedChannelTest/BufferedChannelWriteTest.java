@@ -13,6 +13,8 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
@@ -66,6 +68,9 @@ public class BufferedChannelWriteTest {
         FileChannel fc = randomAccessFile.getChannel();
         this.fileChannel = fc;
 
+
+
+
         this.srcBuffer = generateRandomEntry(this.entrySize);
     }
 
@@ -83,6 +88,10 @@ public class BufferedChannelWriteTest {
                 { 2,  1, 0, null                             }, //8
                 { 2,  2, 0, null                             }, //9
                 { 2,  3, 0, null                             }, //10
+
+                // added to improve coverage
+                { 50,  30, 20, null                    }, //11
+                { 50,  30, 40, null                    }, //12
         });
 
     }
@@ -92,6 +101,7 @@ public class BufferedChannelWriteTest {
         UnpooledByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
         bufferedChannel = new BufferedChannel(allocator, fileChannel, writeBuffCapacity, unpersistedBytes);
         bufferedChannel.write(srcBuffer);
+
 
         /*
          *  If the entry is larger than the capacity of the WriteBuffer,
@@ -108,6 +118,8 @@ public class BufferedChannelWriteTest {
         else {
             numBytesInWriteBuff = entrySize;
         }
+
+
 
         // Inserting the written bytes into WriteBuffer in an array of bytes bytesInWriteBuf
         byte[] bytesInWriteBuff = new byte[numBytesInWriteBuff];
