@@ -88,7 +88,9 @@ public class BufferedChannelReadTest {
                 { 3,  1,  2,  2, false, null                                 }, //7
 
                 // added to improve coverage
-                { 5,  9,  3,  2, true, IOException.class                     }  //8
+                { 5,  9,  3,  2, true,  IOException.class                     },//8
+                // added for mutation testing
+                { 5,  1,  6,  0, false, IOException.class                     } //9
 
         });
     }
