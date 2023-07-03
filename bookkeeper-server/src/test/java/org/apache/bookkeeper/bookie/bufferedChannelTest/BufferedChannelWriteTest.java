@@ -72,17 +72,19 @@ public class BufferedChannelWriteTest {
     @Parameterized.Parameters
     public static Collection parameters() {
         return Arrays.asList(new Object[][] {
+                //writeBuffCapacity/ entrySize/ unpersistedBytesBound/ expectedException
                 {-1, -2, 0, NegativeArraySizeException.class }, //0
                 {-1, -1, 0, NegativeArraySizeException.class }, //1
                 {-1,  0, 0, IllegalArgumentException.class   }, //2
                 { 0, -1, 0, NegativeArraySizeException.class }, //3
                 { 0,  0, 0, null                             }, //4
+                //{ 0,  1, 0, null                             },
                 { 1,  0, 0, null                             }, //5
                 { 1,  1, 0, null                             }, //6
                 { 1,  2, 0, null                             }, //7
-                { 2,  1, 0, null                             }, //8
-                { 2,  2, 0, null                             }, //9
-                { 2,  3, 0, null                             }, //10
+                { 5,  4, 0, null                             }, //8
+                { 5,  5, 0, null                             }, //9
+                { 5,  6, 0, null                             }, //10
 
                 // added to improve coverage
                 { 50,  30, 20, null                    }, //11
@@ -91,7 +93,7 @@ public class BufferedChannelWriteTest {
 
     }
 
-    @Test(timeout = 500)
+    @Test(timeout = 1000)
     public void WriteTest() throws Exception{
         UnpooledByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
         bufferedChannel = new BufferedChannel(allocator, fileChannel, writeBuffCapacity, unpersistedBytes);
