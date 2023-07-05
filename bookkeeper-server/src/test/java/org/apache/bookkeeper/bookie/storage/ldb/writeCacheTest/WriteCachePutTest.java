@@ -4,15 +4,14 @@ import io.netty.buffer.*;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.bookie.storage.ldb.WriteCache;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-
+import java.util.Random;
 
 @RunWith(value = Parameterized.class)
 public class WriteCachePutTest extends TestCase {
@@ -21,101 +20,99 @@ public class WriteCachePutTest extends TestCase {
     private long entryId;
     private ByteBuf entry;
     private int maxSegmentSize;
-    private final Class<? extends Exception> expectedException;
+    private Object expectedResult;
     private static final ByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
     private static final int entrySize = 1024;
     private static final int cacheCapability = 2 * entrySize;
-    private  static final int invalidSize = 2;
-    private static WriteCache cache;
-    private enum ObjType {
-        NULL, LIMIT, VALID, INVALID
-    }
+    private static final int invalidSize = 2;
+    private WriteCache cache;
+    private boolean result;
 
-    public WriteCachePutTest(long ledgerId, long entryId, ObjType entryType,int maxSegmentSize, Class<? extends Exception> expectedException){
+    public WriteCachePutTest(long ledgerId, long entryId, ByteBuf entryType,int maxSegmentSize, Object expectedResult){
         this.ledgerId = ledgerId;
         this.entryId = entryId;
+        this.entry = entryType;
         this.maxSegmentSize = maxSegmentSize;
-        this.expectedException = expectedException;
-        switch(entryType) {
-            case NULL:
-                this.entry = null;
-                break;
-            case LIMIT:
-                ByteBuf limitEntry = allocator.buffer(cacheCapability);
-                limitEntry.writerIndex(limitEntry.capacity());
-            case VALID:
-                ByteBuf validEntry = allocator.buffer(entrySize);
-                validEntry.writerIndex(validEntry.capacity());
-                this.entry = validEntry;
-                break;
-            case INVALID:
-                ByteBuf invalidEntry = allocator.buffer(invalidSize*entrySize);
-                invalidEntry.writerIndex(invalidEntry.capacity());
-                this.entry = invalidEntry;
-                break;
-        }
+        this.expectedResult = expectedResult;
     }
-
 
     @Parameterized.Parameters
     public static Collection parameters(){
 
-        return Arrays.asList(new Object[][] {
-                {-1, -1, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 0
-                {-1, -1, ObjType.VALID,    entrySize,                   IllegalArgumentException.class },  // 1
-                {-1, -1, ObjType.INVALID,  cacheCapability*invalidSize, IllegalArgumentException.class },  // 2
-                {-1,  0, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 3
-                {-1,  0, ObjType.VALID,    entrySize,                   IllegalArgumentException.class },  // 4
-                {-1,  0, ObjType.INVALID,  cacheCapability*invalidSize, IllegalArgumentException.class },  // 5
-                {-1,  1, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 6
-                {-1,  1, ObjType.VALID,    entrySize,                   IllegalArgumentException.class },  // 7
-                {-1,  1, ObjType.INVALID,  cacheCapability*invalidSize, IllegalArgumentException.class },  // 8
-                { 0, -1, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 9
-                { 0, -1, ObjType.VALID,    entrySize,                   IllegalArgumentException.class },  // 10
-                { 0, -1, ObjType.INVALID,  cacheCapability*invalidSize, IllegalArgumentException.class },  // 11
-                { 0,  0, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 12
-                { 0,  0, ObjType.VALID,    entrySize,                   null                           },  // 13
-                { 0,  0, ObjType.INVALID,  cacheCapability*invalidSize, null                           },  // 14
-                { 0,  1, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 15
-                { 0,  1, ObjType.VALID,    entrySize,                   null                           },  // 16
-                { 0,  1, ObjType.INVALID,  cacheCapability*invalidSize, null                           },  // 17
-                { 1, -1, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 18
-                { 1, -1, ObjType.VALID,    entrySize,                   IllegalArgumentException.class },  // 19
-                { 1, -1, ObjType.INVALID,  cacheCapability*invalidSize, IllegalArgumentException.class },  // 20
-                { 1,  0, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 21
-                { 1,  0, ObjType.VALID,    entrySize,                   null                           },  // 22
-                { 1,  0, ObjType.INVALID,  cacheCapability*invalidSize, null                           },  // 23
-                { 1,  1, ObjType.NULL,     entrySize,                   NullPointerException.class     },  // 24
-                { 1,  1, ObjType.VALID,    entrySize,                   null                           },  // 25
-                { 1,  1, ObjType.INVALID,  cacheCapability*invalidSize, null                           },  // 26
+        ByteBuf validEntry = allocator.buffer(entrySize);
+        validEntry.writeBytes(buildString(entrySize).getBytes());
 
-                //killing mutants
-                {1, 1, ObjType.LIMIT, cacheCapability, null},       // 27
-                {1, 1, ObjType.LIMIT, entrySize, null},       // 28
+        ByteBuf invalidEntry = allocator.buffer(invalidSize*cacheCapability);
+        invalidEntry.writeBytes(buildString(invalidSize*cacheCapability).getBytes());
+
+        ByteBuf cacheSizeEntry = allocator.buffer(cacheCapability);
+        cacheSizeEntry.writeBytes(buildString(cacheCapability).getBytes());
+
+        return Arrays.asList(new Object[][] {
+                {-1, -1, null        , entrySize,                   NullPointerException.class     },  // 0
+                {-1, -1, validEntry  , entrySize,                   IllegalArgumentException.class },  // 1
+                {-1, -1, invalidEntry, cacheCapability*invalidSize, false                          },  // 2
+                {-1,  0, null        , entrySize,                   NullPointerException.class     },  // 3
+                {-1,  0, validEntry  , entrySize,                   IllegalArgumentException.class },  // 4
+                {-1,  0, invalidEntry, cacheCapability*invalidSize, false                          },  // 5
+                {-1,  1, null        , entrySize,                   NullPointerException.class     },  // 6
+                {-1,  1, validEntry  , entrySize,                   IllegalArgumentException.class },  // 7
+                {-1,  1, invalidEntry, cacheCapability*invalidSize, false                          },  // 8
+                { 0, -1, null        , entrySize,                   NullPointerException.class     },  // 9
+                { 0, -1, validEntry  , entrySize,                   IllegalArgumentException.class },  // 10
+                { 0, -1, invalidEntry, cacheCapability*invalidSize, false                          },  // 11
+                { 0,  0, null        , entrySize,                   NullPointerException.class     },  // 12
+                { 0,  0, validEntry  , entrySize,                   true                           },  // 13
+                { 0,  0, invalidEntry, cacheCapability*invalidSize, false                          },  // 14
+                { 0,  1, null        , entrySize,                   NullPointerException.class     },  // 15
+                { 0,  1, validEntry  , entrySize,                   true                           },  // 16
+                { 0,  1, invalidEntry, cacheCapability*invalidSize, false                          },  // 17
+                { 1, -1, null        , entrySize,                   NullPointerException.class     },  // 18
+                { 1, -1, validEntry  , entrySize,                   IllegalArgumentException.class },  // 19
+                { 1, -1, invalidEntry, cacheCapability*invalidSize, false                          },  // 20
+                { 1,  0, null        , entrySize,                   NullPointerException.class     },  // 21
+                { 1,  0, validEntry  , entrySize,                   true                           },  // 22
+                { 1,  0, invalidEntry, cacheCapability*invalidSize, false                          },  // 23
+                { 1,  1, null        , entrySize,                   NullPointerException.class     },  // 24
+                { 1,  1, validEntry  , entrySize,                   true                           },  // 25
+                { 1,  1, invalidEntry, cacheCapability*invalidSize, false                          },  // 26
+
+                //increasing coverage
+                { 1,  1, cacheSizeEntry  , entrySize              , false                          },  // 27
+
         });
     }
 
     @Test
     public void putTest() {
         if(this.maxSegmentSize != 0){
-            cache = new WriteCache(this.allocator, this.cacheCapability,this.maxSegmentSize);
+            cache = new WriteCache(allocator, cacheCapability, this.maxSegmentSize);
         }else{
-            cache = new WriteCache(this.allocator, 1023,entrySize);
+            cache = new WriteCache(allocator,entrySize-1, this.entrySize);
         }
-        if(expectedException == null){
-            Assertions.assertDoesNotThrow(() -> {
-                assertEquals(0, cache.count());
-                cache.put(ledgerId, entryId, entry);
-                if (entry.capacity() == entrySize){
-                    assertEquals(1,cache.count());
-                }
-            });
-        }else{
-            Assertions.assertThrows( expectedException, () -> {
-                cache.put(ledgerId, entryId, entry);
-                Assertions.fail();
-            });
+
+        try{
+            assertEquals(0, cache.count());
+            this.result = cache.put(this.ledgerId, this.entryId, this.entry);
+            if (this.entry.capacity() == entrySize && this.maxSegmentSize!=0 || this.maxSegmentSize == cacheCapability){
+                assertEquals(1,cache.count());
+            }else{
+                assertEquals(0,cache.count());
+            }
+            assertEquals(this.expectedResult, this.result);
+        }catch(Exception e){
+            assertEquals(this.expectedResult, e.getClass());
         }
+
+    }
+
+    private static String buildString(int numChars) {
+        String alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < numChars; i++) {
+            builder.append(alphabet.charAt(i % alphabet.length()));
+        }
+        return builder.toString();
     }
 
     @After

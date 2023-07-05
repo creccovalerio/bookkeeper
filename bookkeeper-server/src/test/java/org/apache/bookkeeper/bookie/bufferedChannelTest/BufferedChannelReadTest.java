@@ -23,10 +23,10 @@ import java.util.*;
 @RunWith(Parameterized.class)
 public class BufferedChannelReadTest {
 
+    private int pos;
+    private int length;
     private int fileSize;
-    private int startIndex;
-    private int readLength;
-    private int buffSize;
+    private int capacity;
     private FileChannel fileChannel;
     private BufferedChannel bufferedChannel;
     private byte[] randomBytes;
@@ -35,14 +35,15 @@ public class BufferedChannelReadTest {
     private static final String TMP_DIR = "testTemp";
     private static final String TMP_FILE = "BCReadFile";
 
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    public BufferedChannelReadTest(int fileSize, int startIndex, int readLenght, int buffSize, boolean doWrite, Class<? extends Exception> expectedException) {
+    public BufferedChannelReadTest(int pos, int length, int fileSize, int capacity, boolean doWrite, Class<? extends Exception> expectedException) {
+        this.pos = pos;
+        this.length = length;
         this.fileSize = fileSize;
-        this.startIndex = startIndex;
-        this.readLength = readLenght;
-        this.buffSize = buffSize;
+        this.capacity = capacity;
         this.doWrite = doWrite;
         if (expectedException != null) {
             this.expectedException.expect(expectedException);
@@ -67,7 +68,7 @@ public class BufferedChannelReadTest {
         this.fileChannel.position(this.fileChannel.size());
 
         UnpooledByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
-        this.bufferedChannel = new BufferedChannel(allocator, this.fileChannel, this.buffSize);
+        this.bufferedChannel = new BufferedChannel(allocator, this.fileChannel, this.capacity);
 
         if (this.doWrite) {
             writeInWriteBuff();
@@ -77,20 +78,20 @@ public class BufferedChannelReadTest {
     @Parameterized.Parameters
     public static Collection parameters() {
         return Arrays.asList(new Object[][] {
-                // File Size / Start Index / Read Length / Buffer Size / Expected Exception
-                {-1,  0,  0,  0, false, NegativeArraySizeException.class     }, //0
-                { 0, -1,  0,  0, false, ArrayIndexOutOfBoundsException.class }, //1
-                { 0,  0, -1,  0, false, IllegalArgumentException.class       }, //2
-                { 0,  0,  0, -1, false, IllegalArgumentException.class       }, //3
-                { 0,  0,  0,  0, false, null                                 }, //4
-                { 1,  0,  2,  1, false, IOException.class                    }, //5
-                { 2,  0,  1,  2, false, null                                 }, //6
-                { 3,  1,  2,  2, false, null                                 }, //7
+                //Pos /Length /FileSize /Capacity /Expected Exception
+                { 0,  0, -1, 0, false, NegativeArraySizeException.class     }, //0
+                {-1,  0,  0, 0, false, ArrayIndexOutOfBoundsException.class }, //1
+                { 0, -1,  0, 0, false, IllegalArgumentException.class       }, //2
+                { 0,  0,  0,-1, false, IllegalArgumentException.class       }, //3
+                { 0,  0,  0, 0, false, null                                 }, //4
+                { 0,  5,  4 ,1, false, IOException.class                    }, //5
+                { 0,  5,  6 ,5, false, null                                 }, //6
+                { 1,  5,  6 ,5, false, null                                 }, //7
 
                 // added to improve coverage
-                { 5,  9,  3,  2, true,  IOException.class                     },//8
+                { 9,  3, 5, 2, true,  IOException.class                     }, //8
                 // added for mutation testing
-                { 5,  1,  6,  0, false, IOException.class                     } //9
+                { 1,  6, 5, 0, false, IOException.class                     }  //9
 
         });
     }
@@ -99,22 +100,22 @@ public class BufferedChannelReadTest {
     public void ReadTest() throws Exception {
         ByteBuf readDestBuff = Unpooled.buffer();
         // Size of the destination buffer of read method set to the number of bytes i want to read
-        readDestBuff.capacity(readLength);
+        readDestBuff.capacity(this.length);
 
         // Number of read bytes from bufferedChannel
-        int numReadBytes = this.bufferedChannel.read(readDestBuff, this.startIndex,this.readLength);
+        int numReadBytes = this.bufferedChannel.read(readDestBuff, this.pos,this.length);
         System.out.println("Read OP --> Num Bytes letti: " + numReadBytes);
 
         byte[] bytesRead = readDestBuff.array();
 
         int numBytesExpected;
-        if (this.fileSize - this.startIndex >= this.readLength) {
-            numBytesExpected = this.readLength;
+        if (this.fileSize - this.pos >= this.length) {
+            numBytesExpected = this.length;
         }
         else {
-            numBytesExpected =  this.randomBytes.length - this.startIndex - this.readLength;
+            numBytesExpected =  this.randomBytes.length - this.pos - this.length;
         }
-        byte[] expectedBytes = Arrays.copyOfRange(this.randomBytes, this.startIndex, this.startIndex + numBytesExpected);
+        byte[] expectedBytes = Arrays.copyOfRange(this.randomBytes, this.pos, this.pos + numBytesExpected);
 
         Assert.assertEquals(Arrays.toString(expectedBytes), Arrays.toString(bytesRead));
     }

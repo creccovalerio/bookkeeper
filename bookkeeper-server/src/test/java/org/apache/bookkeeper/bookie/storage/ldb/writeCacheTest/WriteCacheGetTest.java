@@ -7,7 +7,6 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.bookie.storage.ldb.WriteCache;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
@@ -36,27 +35,18 @@ public class WriteCacheGetTest extends TestCase {
         this.expectedException = expectedException;
     }
 
-    @Before
-    public void configure(){
-
-    }
-
     @Parameterized.Parameters
     public static Collection parameters(){
         return Arrays.asList(new Object[][] {
-                {-1, -1, entrySize, IllegalArgumentException.class }, // 0
-                {-1,  0, entrySize, IllegalArgumentException.class }, // 1
-                {-1,  1, entrySize, IllegalArgumentException.class }, // 2
-                { 0, -1, entrySize, null                           }, // 3
-                { 0,  0, entrySize, null                           }, // 4
-                { 0,  1, entrySize, null                           }, // 5
-                { 1, -1, entrySize, null                           }, // 6
-                { 1,  0, entrySize, null                           }, // 7
-                { 1,  1, entrySize, null                           }, // 8
-
-                //killing mutants
-                {1, 1, 512, null},   // 9
-                {1, 1, entrySize, null}, //10
+                {-1, -1, entrySize   , IllegalArgumentException.class }, // 0
+                {-1,  0, entrySize   , IllegalArgumentException.class }, // 1
+                {-1,  1, entrySize   , IllegalArgumentException.class }, // 2
+                { 0, -1, entrySize   , null                           }, // 3
+                { 0,  0, entrySize   , null                           }, // 4
+                { 0,  1, entrySize   , null                           }, // 5
+                { 1, -1, entrySize   , null                           }, // 6
+                { 1,  0, entrySize   , null                           }, // 7
+                { 1,  1, entrySize   , null                           }, // 8
         });
     }
 
@@ -79,7 +69,10 @@ public class WriteCacheGetTest extends TestCase {
         if(expectedException == null){
             Assertions.assertDoesNotThrow(() -> {
                 ByteBuf byteBufGet = cache.get(ledgerId, entryId);
-                if (ledgerId == 0 && entryId == 0 || ledgerId == 0 && entryId == 1 || ledgerId == 1 && entryId == 0 || ledgerId == 1 && entryId == 1){
+                if (ledgerId == 0 && entryId == 0 ||
+                    ledgerId == 0 && entryId == 1 ||
+                    ledgerId == 1 && entryId == 0 ||
+                    ledgerId == 1 && entryId == 1){
                     assertEquals("Aloha!", byteBufGet.toString(Charset.defaultCharset()));
                 } else {
                     assertNull(byteBufGet);

@@ -29,7 +29,7 @@ public class BufferedChannelWriteTest {
     private int writeBuffCapacity;
     private RandomAccessFile randomAccessFile;  // File used to instantiate the FileChannel
     private byte[] randomArray;
-    private long unpersistedBytes;			    // Limit of bytes that can be kept without persistence (flush) on file
+    private long unpersistedBytesBound;		    // Limit of bytes that can be kept without persistence (flush) on file
     private boolean noException = true;
     private static final String TMP_DIR = "testTemp";
     private static final String LOG_FILE = "BCWriteFile";
@@ -37,10 +37,10 @@ public class BufferedChannelWriteTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    public BufferedChannelWriteTest(int writeBuffCapacity, int entrySize, long unpersistedBytes, Class<? extends Exception> expectedException) {
+    public BufferedChannelWriteTest(int writeBuffCapacity, int entrySize, long unpersistedBytesBound, Class<? extends Exception> expectedException) {
         this.entrySize = entrySize;
         this.writeBuffCapacity = writeBuffCapacity;
-        this.unpersistedBytes = unpersistedBytes;
+        this.unpersistedBytesBound = unpersistedBytesBound;
         if (expectedException!=null) {
             this.expectedException.expect(expectedException);
             this.noException = false;
@@ -96,7 +96,7 @@ public class BufferedChannelWriteTest {
     @Test(timeout = 1000)
     public void WriteTest() throws Exception{
         UnpooledByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
-        bufferedChannel = new BufferedChannel(allocator, fileChannel, writeBuffCapacity, unpersistedBytes);
+        bufferedChannel = new BufferedChannel(allocator, fileChannel, writeBuffCapacity, unpersistedBytesBound);
         bufferedChannel.write(srcBuffer);
 
         /*
