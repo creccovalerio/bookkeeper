@@ -78,23 +78,21 @@ public class WriteCachePutTest extends TestCase {
                 { 1,  1, invalidEntry, cacheCapability*invalidSize, false                          },  // 26
 
                 //increasing coverage
-                { 1,  1, cacheSizeEntry, entrySize              , false                          },  // 27
-
+                { 1,  1, cacheSizeEntry, entrySize                , false                          },  // 27
+                //killing mutants
+                { 1,  1, cacheSizeEntry, cacheCapability          , true                           },  // 28
         });
     }
 
     @Test
     public void putTest() {
-        if(this.maxSegmentSize != 0){
-            cache = new WriteCache(allocator, cacheCapability, this.maxSegmentSize);
-        }else{
-            cache = new WriteCache(allocator,entrySize-1, this.entrySize);
-        }
+
+        cache = new WriteCache(allocator, cacheCapability, this.maxSegmentSize);
 
         try{
             assertEquals(0, cache.count());
             this.result = cache.put(this.ledgerId, this.entryId, this.entry);
-            if (this.entry.capacity() == entrySize){
+            if (this.entry.capacity() == entrySize || this.maxSegmentSize == cacheCapability){
                 assertEquals(1,cache.count());
             }else{
                 assertEquals(0,cache.count());
