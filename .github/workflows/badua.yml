@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: badua-report
-          path: bookkeeper-server/target/badua.xml
+          path: bookkeeper-server/target/badua.ser
